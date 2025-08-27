@@ -555,9 +555,6 @@ export default class TemplateManager {
     return outBlob;
   }
 
-    return await canvas.convertToBlob({ type: 'image/png' });
-  }
-
   /** Imports the JSON object, and appends it to any JSON object already loaded
    * @param {string} json - The JSON string to parse
    */
