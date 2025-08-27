@@ -1,0 +1,227 @@
+name: Bump, Build, Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  # Updates the Auto branch to match Main
+  update-auto:
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Update Auto To Main
+        run: |
+          git fetch origin
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git checkout auto || git checkout -b auto
+          git reset --hard origin/main
+          git push --force origin auto
+
+  # Builds the code
+  # This is bundling, obfuscating, version bumping, etc.
+  build:
+    permissions:
+      contents: write
+    
+    runs-on: ubuntu-latest
+
+    needs: [update-auto] # Needs the update-auto job to finish first
+
+    outputs:
+      TITLE: ${{ steps.get-commit-message.outputs.TITLE }}
+      BODY: ${{ steps.get-commit-message.outputs.BODY }}
+      CURRENT_VERSION: ${{ steps.get_version.outputs.current_version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Update userscript version
+        run: |
+          npm version minor --no-git-tag-version
+          node build/update-version.js
+
+      - name: Build userscript
+        run: npm run build
+
+      - name: Get current version
+        id: get_version
+        run: |
+          current_version=$(jq -r '.version' package.json)
+          echo "Current version: $current_version"
+          echo "current_version=$current_version" >> $GITHUB_OUTPUT
+
+      - name: Get latest release tag (no "v" prefix)
+        id: get_latest_tag
+        run: |
+          latest_tag=$(gh release list --limit 1 --exclude-drafts --exclude-pre-releases=false | head -n 1 | awk '{print $1}')
+          latest_tag_no_v=${latest_tag#v}
+          echo "latest_tag_no_v=$latest_tag_no_v" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update static version numbers
+        run: |
+          current_version="${{ steps.get_version.outputs.current_version }}"
+          latest_tag="${{ steps.get_latest_tag.outputs.latest_tag_no_v }}"
+          if [ -f "docs/README.md" ]; then
+            echo "README.md exists. Modifying..."
+            sed -i \
+              -e 's|\(Latest_Version-\)[^-\ ]*\(-lightblue\)|\1'"$current_version"'\2|' \
+              docs/README.md
+          else
+            echo "README.md was not found. Skipping..."
+          fi
+      
+      - name: Update compression badge
+        run: |
+          dist_size=$(find dist -type f -exec cat {} + | wc -c)
+          src_size=$(find src dist/assets -type f -exec cat {} + | wc -c)
+          percentage=$(awk "BEGIN {printf \"%.2f\", 100 - ($dist_size * 100) / $src_size}")
+          echo "Compression: $percentage"
+          badge_url="https://img.shields.io/badge/Compression-${percentage}%25-blue"
+          sed -i -E 's#https://img.shields.io/badge/Compression-[^"]*#'"$badge_url"'#' docs/README.md
+
+      - name: Get the previous commit message
+        id: get-commit-message
+        run: |
+          COMMIT_MSG="$(git log -1 --pretty=%B)"
+          TITLE="$(echo "$COMMIT_MSG" | head -n1)"
+          BODY="$(echo "$COMMIT_MSG" | tail -n +2)"
+
+          {
+            echo "TITLE<<EOF"
+            echo "$TITLE"
+            echo "EOF"
+            echo "BODY<<EOF"
+            echo "$BODY"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+        # This should happen on 'auto' branch
+      - name: Commit and push built script
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git checkout auto || git checkout -b auto
+          git add dist/*
+          git add src/BlueMarble.meta.js
+          git add package.json
+          git add docs/README.md
+          git commit -m "Bumped version; ${{ steps.get-commit-message.outputs.TITLE }}" -m "${{ steps.get-commit-message.outputs.BODY }}" || echo "No changes to commit"
+          git push --set-upstream origin auto
+
+  # Updates the requirement link SHA
+  update-requirements:
+
+    permissions:
+      contents: write
+    
+    runs-on: ubuntu-latest
+
+    needs: [update-auto, build] # Needs the update-auto and build jobs to finish first
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: auto # Checks out the auto branch
+          fetch-depth: 0
+
+      - name: Get SHA of origin/auto
+        run: |
+          git fetch origin auto
+          AUTO_SHA=$(git rev-parse origin/auto)
+          echo "Auto SHA: $AUTO_SHA"
+          echo "AUTO_SHA=$AUTO_SHA" >> $GITHUB_ENV
+
+      - name: Update Resource Link SHA
+        run: |
+          echo "Auto SHA: $AUTO_SHA"
+          sed -i "/@icon/ s#/[a-f0-9]\{40\}/#/${AUTO_SHA}/#g" dist/BlueMarble.user.js src/BlueMarble.meta.js
+          sed -i "/@resource/ s#/[a-f0-9]\{40\}/#/${AUTO_SHA}/#g" dist/BlueMarble.user.js src/BlueMarble.meta.js
+          echo "Updated resourceLinkSHA:"
+          grep "@icon" dist/BlueMarble.user.js src/BlueMarble.meta.js
+          grep "@resource" dist/BlueMarble.user.js src/BlueMarble.meta.js
+        env:
+          AUTO_SHA: ${{ env.AUTO_SHA }}
+
+      - name: Commit Resource Link SHA
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git add dist/BlueMarble.user.js
+          git add src/BlueMarble.meta.js
+          git commit -m "Merge version; ${{ needs.build.outputs.TITLE }}" -m "${{ needs.build.outputs.BODY }}" || echo "No changes to commit"
+          git push
+
+      - name: Merge Auto -> Main
+        run: |
+          git fetch origin
+          git checkout origin/main -B main
+          git merge --squash origin/auto
+          git commit -m "v${{ needs.build.outputs.CURRENT_VERSION }}; ${{ needs.build.outputs.TITLE }}" -m "${{ needs.build.outputs.BODY }}" || echo "No changes to commit"
+          git push origin main
+
+  update-wiki:
+    
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    needs: [update-auto, build, update-requirements] # Needs the update-auto, build, and update-requirements jobs to finish first
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        
+      - name: Force update wiki branch
+        run: |
+          git fetch origin
+          git branch -f wiki origin/main
+          git push origin wiki --force
+
+      - name: Checkout wiki branch
+        run: git checkout wiki
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install minami taffydb
+        
+      - name: Generate JSDoc from jsdoc.json
+        run: |
+          npx jsdoc -c jsdoc.json
+      
+      - name: Commit and push to wiki branch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git add docs
+          git commit -m "Update wiki via JSDoc" || echo "No changes to commit"
+          git push origin wiki

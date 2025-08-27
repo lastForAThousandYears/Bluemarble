@@ -1,0 +1,101 @@
+name: Bug Report
+description: Found a bug? Report it here!
+title: "[BUG] "
+labels: ["bug"]
+assignees: 
+  - SwingTheVine
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to fill out this template!
+        **The more information you can provide, the easier it will be to identify and squash the bug.**
+        If you want to read a guide on filing bug reports effectively, you can [find it here](https://www.chiark.greenend.org.uk/~sgtatham/bugs.html).
+  - type: checkboxes
+    id: checked-bugs
+    attributes:
+      label: Have you checked to see if this issue has already been reported?
+      options:
+        - label: This bug has not been previously reported.
+    validations:
+      required: true
+  - type: textarea
+    id: describe-bug
+    attributes:
+      label: Describe The Bug
+      description: "Describe what the bug causes to happen."
+      placeholder: "E.g. When creating a template, the tile becomes black."
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: "Describe what you expected to happen or why you think the current behavior is wrong."
+      placeholder: |
+        E.g. When I create a template, I expect the template to be overlayed on the game instead of making the game black.
+        E.g. The game is not supposed to become black.
+    validations:
+      required: false
+  - type: textarea
+    id: things-tried
+    attributes:
+      label: Things You Tried
+      description: "Describe all of the things you tried."
+      placeholder: "E.g. I tried different templates of different sizes. I tried updating Blue Marble."
+    validations:
+      required: false
+  - type: textarea
+    id: reproduce-bug
+    attributes:
+      label: Reproduce The Bug
+      description: "What steps do you take to reproduce the bug?"
+      placeholder: |
+        E.g.
+        1. Load the game
+        2. Get the coordinates (12, 194, 193, 3)
+        3. Make a template at the coordinates
+        4. The game will become black.
+    validations:
+      required: false
+  - type: textarea
+    id: error-message
+    attributes:
+      label: Error Message
+      description: "If applicable, add any error messages you get."
+      placeholder: "E.g. Error: Coordinates are malformed! Did you try clicking on the canvas first?"
+    validations:
+      required: false
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: "If applicable, add screenshots to help explain your problem."
+      placeholder: "E.g. An Imgur link"
+    validations:
+      required: false
+  - type: textarea
+    id: system-information
+    attributes:
+      label: System Information
+      description: "Please fill out these details about your OS, Blue Marble version, and what website browser you use. Please fill this out!"
+      placeholder: |
+        OS: (E.g. Windows)
+        Blue Marble Version: 3.346.0
+        Browser: Chrome
+        You found an easter egg :3
+      value: |
+        OS: 
+        Blue Marble Version: 
+        Browser: 
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: "Add any other context about the problem here."
+      placeholder: "E.g. This bug has been happening since 3.245.0"
+    validations:
+      required: false
+      

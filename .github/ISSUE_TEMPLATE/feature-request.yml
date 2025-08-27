@@ -1,0 +1,50 @@
+name: Feature Request
+description: Have an idea you want added? Suggest it here!
+title: "[FEATURE] "
+labels: ["enhancement"]
+assignees: 
+  - SwingTheVine
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Please don't ask for the automatic placing of pixels without user interaction! 
+        Thank you for taking the time to fill out this template!
+  - type: textarea
+    id: related-problem
+    attributes:
+      label: Is your feature request related to a problem? Please describe.
+      description: "Describe what the problem is."
+      placeholder: |
+        E.g. Most of my template images are too large.
+        E.g. I want a way to chat with people.
+    validations:
+      required: false
+  - type: textarea
+    id: feature-solution
+    attributes:
+      label: Describe the solution you'd like
+      description: "Describe what you want to happen."
+      placeholder: |
+        E.g. Add a scaling feature so I can make my images smaller.
+        E.g. Add a chat window so I can chat with other people.
+    validations:
+      required: true
+  - type: textarea
+    id: feature-alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: "Describe any alternative solutions or features you've considered."
+      placeholder: |
+        E.g. Instead of making an image resizing tool, you could link to one.
+        E.g. Instead of adding a chat window, you could attach the messages to pixels and view them on the canvas!
+    validations:
+      required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context or screenshots about the feature request here. If your feature is based on "something," please add any links relative to that "something" here.
+      placeholder: |
+        E.g. An image (or a Imgur link) to a drawing you made of your idea.
+        E.g. A link to a something that already has your feature. This could be a video game, userscript, etc.

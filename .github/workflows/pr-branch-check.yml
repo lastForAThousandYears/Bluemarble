@@ -1,0 +1,20 @@
+name: Enforce allowed branches for PRs to main
+
+permissions:
+  contents: read
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR source branch
+        run: |
+          echo "Source branch: ${{ github.head_ref }}"
+          if [[ "${{ github.head_ref }}" != "documentation" && "${{ github.head_ref }}" != "code" ]]; then
+            echo "Error: PRs to main must come from 'documentation' or 'code' branches only."
+            exit 1
+          fi
