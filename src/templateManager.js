@@ -632,13 +632,15 @@ export default class TemplateManager {
                     const a = data[idx + 3];
                     if (a < 64) { continue; }
                     if (r === 222 && g === 250 && b === 206) { continue; }
-                    requiredPixelCount++;
-                    const key = activeTemplate.allowedColorsSet.has(`${r},${g},${b}`) ? `${r},${g},${b}` : 'other';
+                    const key = Object.hasOwn(templates[templateKey].palette, `${r},${g},${b}`) ? `${r},${g},${b}` : "other";
                     paletteMap.set(key, (paletteMap.get(key) || 0) + 1);
+                    requiredPixelCount++;
                   }
                 }
               } catch (e) {
                 console.warn('Failed to count required pixels for imported tile', e);
+                // Set to zero so that we can fall back to the correct value later
+                requiredPixelCount = 0;
               }
             }
           }
