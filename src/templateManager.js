@@ -62,6 +62,10 @@ export default class TemplateManager {
     this.templatesJSON = null; // All templates currently loaded (JSON)
     this.templatesShouldBeDrawn = true; // Should ALL templates be drawn to the canvas?
     this.tileProgress = new Map(); // Tracks per-tile progress stats {painted, required, wrong}
+    // Tracks per-tile painted counts by color key (e.g., "r,g,b" or "other").
+    // Aggregated into colorPaintedByKey for UI display
+    this.tileColorPainted = new Map();
+    this.colorPaintedByKey = {}; // { [rgbKey: string]: number }
   }
 
   /** Retrieves the pixel art canvas.
@@ -281,6 +285,8 @@ export default class TemplateManager {
     let paintedCount = 0;
     let wrongCount = 0;
     let requiredCount = 0;
+    // Per-tile painted counts by color
+    const paintedByColor = new Map();
     
     const tileBitmap = await createImageBitmap(tileBlob);
 
@@ -404,6 +410,13 @@ export default class TemplateManager {
                 // ELSE IF the pixel matches the template center pixel color
               } else if (realPixelRed === templatePixelCenterRed && realPixelCenterGreen === templatePixelCenterGreen && realPixelCenterBlue === templatePixelCenterBlue) {
                 paintedCount++; // ...the pixel is painted correctly
+                // Track painted count for this specific color key
+                try {
+                  const activeTemplate = this.templatesArray?.[0];
+                  const keyCandidate = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
+                  const rgbKey = (activeTemplate?.allowedColorsSet && activeTemplate.allowedColorsSet.has(keyCandidate)) ? keyCandidate : 'other';
+                  paintedByColor.set(rgbKey, (paintedByColor.get(rgbKey) || 0) + 1);
+                } catch (_) { /* no-op */ }
               } else {
                 wrongCount++; // ...the pixel is NOT painted correctly
               }
@@ -496,6 +509,17 @@ export default class TemplateManager {
         wrong: wrongCount,
       });
 
+      // Save painted-by-color for this tile and recompute aggregate per-color painted counts
+      this.tileColorPainted.set(tileKey, paintedByColor);
+      const aggregate = {};
+      for (const colorMap of this.tileColorPainted.values()) {
+        if (!colorMap) { continue; }
+        for (const [rgbKey, count] of colorMap.entries()) {
+          aggregate[rgbKey] = (aggregate[rgbKey] || 0) + (count || 0);
+        }
+      }
+      this.colorPaintedByKey = aggregate;
+
       // Aggregate painted/wrong across tiles we've processed
       let aggPainted = 0;
       let aggRequiredTiles = 0;
@@ -510,7 +534,7 @@ export default class TemplateManager {
       // Prefer precomputed per-template required counts; fall back to sum of processed tiles
       const totalRequiredTemplates = this.templatesArray.reduce((sum, t) =>
         sum + (t.requiredPixelCount || t.pixelCount || 0), 0);
-      const totalRequired = aggRequiredTiles;
+      const totalRequired = totalRequiredTemplates > 0 ? totalRequiredTemplates : aggRequiredTiles;
 
       // Turns numbers into formatted number strings. E.g., 1234 -> 1,234 OR 1.234 based on location of user
       const paintedStr = new Intl.NumberFormat().format(aggPainted);
@@ -520,11 +544,15 @@ export default class TemplateManager {
       this.overlay.handleDisplayStatus(
         `Displaying ${templateCount} template${templateCount == 1 ? '' : 's'}.\nPainted ${paintedStr} / ${requiredStr} • Wrong ${wrongStr}`
       );
+      // Notify UI to refresh color list with updated per-color counts
+      try { window.postMessage({ source: 'blue-marble', bmEvent: 'bm-rebuild-color-list' }, '*'); } catch (_) { /* no-op */ }
     } else {
       this.overlay.handleDisplayStatus(`Displaying ${templateCount} templates.`);
     }
 
-    return await canvas.convertToBlob({ type: 'image/png' });
+    const outBlob = await canvas.convertToBlob({ type: 'image/png' });
+    try { this.lastProcessedTiles.set(tileKey, outBlob); } catch (_) { /* no-op */ }
+    return outBlob;
   }
 
   /** Imports the JSON object, and appends it to any JSON object already loaded
