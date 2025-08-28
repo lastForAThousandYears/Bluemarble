@@ -9,7 +9,7 @@ import { base64ToUint8, numberToEncoded } from "./utils";
  * @example
  * // JSON structure for a template
  * {
- *   "whoami": "BlueMarble",
+ *   "whoami": "Blue Marble For Us Furries :3",
  *   "scriptVersion": "1.13.0",
  *   "schemaVersion": "2.1.0",
  *   "templates": {
