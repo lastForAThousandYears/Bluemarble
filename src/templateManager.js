@@ -564,7 +564,7 @@ export default class TemplateManager {
     console.log(json);
 
     // If the passed in JSON is a Blue Marble template object...
-    if (json?.whoami == 'Blue Marble For Us Furries') {
+    if (json?.whoami == 'BlueMarble For Us Furries') {
       this.#parseBlueMarble(json); // ...parse the template object as Blue Marble
     }
   }

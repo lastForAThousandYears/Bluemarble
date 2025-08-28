@@ -186,6 +186,7 @@ console.log(storageTemplates);
 templateManager.importJSON(storageTemplates); // Loads the templates
 
 const userSettings = JSON.parse(GM_getValue('bmUserSettings', '{}')); // Loads the user settings
+let hidePainted = userSettings.hidePainted || false;
 console.log(userSettings);
 console.log(Object.keys(userSettings).length);
 if (Object.keys(userSettings).length == 0) {
@@ -571,6 +572,24 @@ function buildOverlayMain() {
               instance.handleDisplayStatus('Disabled all colors');
             };
           }).buildElement()
+          .addButton({'id': 'bm-button-colors-toggle-painted', 'textContent': (hidePainted ? 'Show' : 'Hide') + ' painted', 'style': 'white-space: nowrap;'}, (instance, button) => {
+            button.onclick = () => {
+              hidePainted = !hidePainted;
+              
+              // Change button text
+              let button = document.getElementById('bm-button-colors-toggle-painted');
+              button.textContent = (hidePainted ? 'Show' : 'Hide') + ' painted';
+
+              // Save settings
+              const userSettings = JSON.parse(GM_getValue('bmUserSettings', '{}'));
+              userSettings.hidePainted = hidePainted;
+              GM.setValue('bmUserSettings', JSON.stringify(userSettings));
+
+              // Rebuild list and notify user
+              buildColorFilterList();
+              instance.handleDisplayStatus('Painted colors ' + (hidePainted ? 'hidden' : 'shown'));
+            };
+          }).buildElement()
         .buildElement()
         .addDiv({'id': 'bm-colorfilter-list'}).buildElement()
       .buildElement()
@@ -675,6 +694,9 @@ function buildOverlayMain() {
       const paintedStr = new Intl.NumberFormat().format(paintedCount);
       const totalStr = new Intl.NumberFormat().format(meta.count || 0);
       let labelText = `${paintedStr}/${totalStr}`;
+      if (paintedCount / meta.count == 1 && hidePainted) {
+        continue;
+      }
 
       // Special handling for "other" and "transparent"
       if (rgb === 'other') {
