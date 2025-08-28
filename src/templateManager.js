@@ -542,7 +542,7 @@ export default class TemplateManager {
       const wrongStr = new Intl.NumberFormat().format(totalRequired - aggPainted); // Used to be aggWrong, but that is bugged
 
       this.overlay.handleDisplayStatus(
-        `Displaying ${templateCount} template${templateCount == 1 ? '' : 's'}.\nPainted ${paintedStr} / ${requiredStr} • Wrong ${wrongStr}`
+        `Displaying ${templateCount} template${templateCount == 1 ? '' : 's'}.\nPainted ${paintedStr} / ${requiredStr} (${(aggPainted / totalRequired * 100).toFixed(2)}%) • Wrong ${wrongStr}`
       );
       // Notify UI to refresh color list with updated per-color counts
       try { window.postMessage({ source: 'blue-marble', bmEvent: 'bm-rebuild-color-list' }, '*'); } catch (_) { /* no-op */ }
