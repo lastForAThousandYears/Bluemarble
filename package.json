@@ -1,6 +1,6 @@
 {
   "name": "wplace-bluemarble",
-  "version": "0.85.9",
+  "version": "0.85.10",
   "type": "module",
   "homepage": "https://bluemarble.camilledaguin.fr/",
   "repository": {
@@ -9,7 +9,8 @@
   },
   "scripts": {
     "build": "node build/build.js",
-    "patch": "node build/patch.js && npm run build"
+    "patch": "node build/patch.js && npm run build",
+    "build-nominify": "node build/build_nominify.js"
   },
   "devDependencies": {
     "esbuild": "^0.25.9",

@@ -18,12 +18,12 @@ const consoleStyle = 'color: cornflowerblue;'; // The styling for the console lo
  * @since 0.11.15
  */
 function inject(callback) {
-    const script = document.createElement('script');
-    script.setAttribute('bm-name', name); // Passes in the name value
-    script.setAttribute('bm-cStyle', consoleStyle); // Passes in the console style value
-    script.textContent = `(${callback})();`;
-    document.documentElement?.appendChild(script);
-    script.remove();
+  const script = document.createElement('script');
+  script.setAttribute('bm-name', name); // Passes in the name value
+  script.setAttribute('bm-cStyle', consoleStyle); // Passes in the console style value
+  script.textContent = `(${callback})();`;
+  document.documentElement?.appendChild(script);
+  script.remove();
 }
 
 /** What code to execute instantly in the client (webpage) to spy on fetch calls.
@@ -275,7 +275,7 @@ function buildOverlayMain() {
       GM.setValue('bmCoords', JSON.stringify(data));
     } catch (_) {}
   };
-  
+
   overlayMain.addDiv({'id': 'bm-overlay', 'style': 'top: 10px; right: 75px; width: fit-content; max-width: 90vw;'})
     .addDiv({'id': 'bm-contain-header'})
       .addDiv({'id': 'bm-bar-drag'}).buildElement()
@@ -658,6 +658,8 @@ function buildOverlayMain() {
     .buildElement()
   .buildOverlay(document.body);
 
+
+  const expandedState = {}; // { "rgb": true/false }
   // ------- Helper: Build the color filter list -------
   window.buildColorFilterList = function buildColorFilterList() {
     const listContainer = document.querySelector('#bm-colorfilter-list');
@@ -736,10 +738,36 @@ function buildOverlayMain() {
         } catch (_) {}
       });
 
+      const expandBtn = document.createElement('button');
+      expandBtn.textContent = '⯈';
+      expandBtn.style.fontSize = '10px';
+      expandBtn.style.padding = '2px 4px';
+      expandBtn.style.cursor = 'pointer';
+
+      const coordsBox = document.createElement('div');
+      coordsBox.style.display = expandedState[rgb] ? 'block' : 'none';
+      coordsBox.style.fontSize = '11px';
+      coordsBox.style.marginLeft = '24px';
+      coordsBox.style.whiteSpace = 'pre-wrap';
+      coordsBox.textContent = `Coordinates (100 results max):\n${templateManager.wrongColors?.get(rgb)?.join('\n') || 'no data'}`;
+
+      expandBtn.addEventListener('click', () => {
+        const isHidden = coordsBox.style.display === 'none';
+        coordsBox.style.display = isHidden ? 'block' : 'none';
+        expandBtn.textContent = isHidden ? '▼' : '⯈';
+        expandedState[rgb] = isHidden;
+      });
+
       row.appendChild(toggle);
       row.appendChild(swatch);
       row.appendChild(label);
+      row.appendChild(expandBtn);
+
+      row.appendChild(expandBtn);
+
       listContainer.appendChild(row);
+      listContainer.appendChild(coordsBox);
+      listContainer.appendChild(coordsBox);
     }
   };
 

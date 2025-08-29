@@ -264,7 +264,7 @@ export default class TemplateManager {
         const matchingTileBlobs = matchingTiles.map(tile => {
 
           const coords = tile.split(','); // [x, y, x, y] Tile/pixel coordinates
-          
+
           return {
             bitmap: template.chunked[tile],
             tileCoords: [coords[0], coords[1]],
@@ -287,7 +287,8 @@ export default class TemplateManager {
     let requiredCount = 0;
     // Per-tile painted counts by color
     const paintedByColor = new Map();
-    
+    const wrongColors = new Map();
+
     const tileBitmap = await createImageBitmap(tileBlob);
 
     const canvas = new OffscreenCanvas(drawSize, drawSize);
@@ -320,7 +321,6 @@ export default class TemplateManager {
       // honoring color enable/disable from the active template's palette
       if (tilePixels) {
         try {
-          
           const tempWidth = template.bitmap.width;
           const tempHeight = template.bitmap.height;
           const tempCanvas = new OffscreenCanvas(tempWidth, tempHeight);
@@ -356,6 +356,7 @@ export default class TemplateManager {
               const templatePixelCenterBlue = tData[templatePixelCenter + 2]; // Shread block's center pixel's BLUE value
               const templatePixelCenterAlpha = tData[templatePixelCenter + 3]; // Shread block's center pixel's ALPHA value
 
+              const pixel_coords = `${Number(template.pixelCoords[0]) + (x - 1) / this.drawMult}, ${Number(template.pixelCoords[1]) + (y - 1) / this.drawMult}`;
               // Possibly needs to be removed 
               // Handle template transparent pixel (alpha < 64): wrong if board has any site palette color here
               // If the alpha of the center pixel is less than 64...
@@ -371,10 +372,19 @@ export default class TemplateManager {
                   const key = activeTemplate.allowedColorsSet.has(`${pr},${pg},${pb}`) ? `${pr},${pg},${pb}` : 'other';
 
                   const isSiteColor = activeTemplate?.allowedColorsSet ? activeTemplate.allowedColorsSet.has(key) : false;
-                  
+
                   // IF the alpha of the center pixel that is placed on the canvas is greater than or equal to 64, AND the pixel is a Wplace palette color, then it is incorrect.
                   if (pa >= 64 && isSiteColor) {
                     wrongCount++;
+                    const activeTemplate = this.templatesArray?.[0];
+                    const keyCandidate = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
+                    const rgbKey = (activeTemplate?.allowedColorsSet && activeTemplate.allowedColorsSet.has(keyCandidate)) ? keyCandidate : 'other';
+
+                    const arr = wrongColors.get(rgbKey) || [];
+                    if (arr.length < 100) {
+                      arr.push(pixel_coords);
+                      wrongColors.set(rgbKey, arr);
+                    }
                   }
                 } catch (ignored) {}
 
@@ -405,8 +415,17 @@ export default class TemplateManager {
 
               // IF the alpha of the pixel is less than 64...
               if (realPixelCenterAlpha < 64) {
-                // Unpainted -> neither painted nor wrong
 
+                // Unpainted -> neither painted nor wrong
+                const activeTemplate = this.templatesArray?.[0];
+                const keyCandidate = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
+                const rgbKey = (activeTemplate?.allowedColorsSet && activeTemplate.allowedColorsSet.has(keyCandidate)) ? keyCandidate : 'other';
+
+                const arr = wrongColors.get(rgbKey) || [];
+                if (arr.length < 100) {
+                  arr.push(pixel_coords);
+                  wrongColors.set(rgbKey, arr);
+                }
                 // ELSE IF the pixel matches the template center pixel color
               } else if (realPixelRed === templatePixelCenterRed && realPixelCenterGreen === templatePixelCenterGreen && realPixelCenterBlue === templatePixelCenterBlue) {
                 paintedCount++; // ...the pixel is painted correctly
@@ -419,6 +438,16 @@ export default class TemplateManager {
                 } catch (_) { /* no-op */ }
               } else {
                 wrongCount++; // ...the pixel is NOT painted correctly
+
+                const activeTemplate = this.templatesArray?.[0];
+                const keyCandidate = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
+                const rgbKey = (activeTemplate?.allowedColorsSet && activeTemplate.allowedColorsSet.has(keyCandidate)) ? keyCandidate : 'other';
+
+                const arr = wrongColors.get(rgbKey) || [];
+                if (arr.length < 100) {
+                  arr.push(pixel_coords);
+                  wrongColors.set(rgbKey, arr);
+                }
               }
             }
           }
@@ -426,7 +455,7 @@ export default class TemplateManager {
           console.warn('Failed to compute per-tile painted/wrong stats:', exception);
         }
       }
-
+      this.wrongColors = wrongColors;
       // Draw the template overlay for visual guidance, honoring color filter
       try {
 
