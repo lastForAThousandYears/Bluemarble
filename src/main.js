@@ -739,7 +739,7 @@ function buildOverlayMain() {
       });
 
       const expandBtn = document.createElement('button');
-      expandBtn.textContent = '⯈';
+      expandBtn.textContent = isHidden ? '▼' : '⯈';
       expandBtn.style.fontSize = '10px';
       expandBtn.style.padding = '2px 4px';
       expandBtn.style.cursor = 'pointer';
