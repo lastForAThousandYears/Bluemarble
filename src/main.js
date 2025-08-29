@@ -739,7 +739,6 @@ function buildOverlayMain() {
       });
 
       const expandBtn = document.createElement('button');
-      expandBtn.textContent = isHidden ? '▼' : '⯈';
       expandBtn.style.fontSize = '10px';
       expandBtn.style.padding = '2px 4px';
       expandBtn.style.cursor = 'pointer';
@@ -750,6 +749,8 @@ function buildOverlayMain() {
       coordsBox.style.marginLeft = '24px';
       coordsBox.style.whiteSpace = 'pre-wrap';
       coordsBox.textContent = `Coordinates (100 results max):\n${templateManager.wrongColors?.get(rgb)?.join('\n') || 'no data'}`;
+
+      expandBtn.textContent = coordsBox.style.display === 'none' ? '⯈' : '▼';
 
       expandBtn.addEventListener('click', () => {
         const isHidden = coordsBox.style.display === 'none';
