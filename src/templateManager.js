@@ -423,7 +423,7 @@ export default class TemplateManager {
       if (tilePixels) {
         const drawMult = this.drawMult;
         const tileKey = tileCoords; // already padded string "xxxx,yyyy"
-        const wrongColors = this.wrongColors?.get(tileKey) || new Map();
+        const wrongColors = new Map();
         this.worker.postMessage({ template, tilePixels, drawSize, activeTemplate, drawMult, tileKey, wrongColors });
         this.worker.onmessage = e => {
           let {paintedCount, requiredCount, wrongCount, paintedByColor, tileKey, wrongColors} = e.data;
