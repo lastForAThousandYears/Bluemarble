@@ -748,7 +748,14 @@ function buildOverlayMain() {
       coordsBox.style.fontSize = '11px';
       coordsBox.style.marginLeft = '24px';
       coordsBox.style.whiteSpace = 'pre-wrap';
-      coordsBox.textContent = `Coordinates (100 results max):\n${templateManager.wrongColors?.get(rgb)?.join('\n') || 'no data'}`;
+      const aggregated = Array.from(templateManager.wrongColors?.values?.() ?? [])
+        .flatMap(innerMap => {
+          const v = innerMap.get(rgb);
+          return v ? (Array.isArray(v) ? v : [...v]) : [];
+        });
+      coordsBox.textContent = `Coordinates (100 results max):\nTl X, Tl Y | Px X, Px Y\n${
+        aggregated.length ? aggregated.slice(0, 100).join('\n') : 'no data'
+      }`;
 
       expandBtn.textContent = coordsBox.style.display === 'none' ? '⯈' : '▼';
 
