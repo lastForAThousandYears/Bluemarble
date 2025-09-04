@@ -771,10 +771,7 @@ function buildOverlayMain() {
       row.appendChild(label);
       row.appendChild(expandBtn);
 
-      row.appendChild(expandBtn);
-
       listContainer.appendChild(row);
-      listContainer.appendChild(coordsBox);
       listContainer.appendChild(coordsBox);
     }
   };
