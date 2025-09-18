@@ -132,7 +132,10 @@ export default class TemplateManager {
               const realPixelG = tilePixels[realPixelCenter + 1];
               const realPixelB = tilePixels[realPixelCenter + 2];
               const realPixelA = tilePixels[realPixelCenter + 3];
-              const isDeface = templatePixelA === 32;
+              const isDeface = 
+                              templatePixelR === 0xDE &&
+                              templatePixelG === 0xFA &&
+                              templatePixelB === 0xCE;
               const pixel_coords = `${tileKey.split(',').join(', ')} | ${Number(template.pixelCoords[0]) + (x - 1) / drawMult}, ${Number(template.pixelCoords[1]) + (y - 1) / drawMult}`;
 
               if (isDeface && realPixelA < 64) {
@@ -141,9 +144,13 @@ export default class TemplateManager {
                   paintedByColor.set('222,250,206', (paintedByColor.get('222,250,206') || 0) + 1);
                 } catch (_) { /* no-op */ }
                 continue;
-              }
-
-              if (realPixelR === templatePixelR && 
+              } else if (realPixelA < 64) {
+                // Unpainted
+                //if (wrongColorArr.length < 100) {
+                  wrongColorArr.push(pixel_coords);
+                  wrongColors.set(rgbKey, wrongColorArr);
+                //}
+              } else if (realPixelR === templatePixelR && 
                 realPixelG === templatePixelG && 
                 realPixelB === templatePixelB
               ) {
@@ -152,12 +159,6 @@ export default class TemplateManager {
                 try {
                   paintedByColor.set(rgbKey, (paintedByColor.get(rgbKey) || 0) + 1);
                 } catch (_) { /* no-op */ }
-              } else if (realPixelA < 64) {
-                // Unpainted
-                //if (wrongColorArr.length < 100) {
-                  wrongColorArr.push(pixel_coords);
-                  wrongColors.set(rgbKey, wrongColorArr);
-                //}
               } else {
                 wrongCount++; // ...the pixel is NOT painted correctly
                 //if (wrongColorArr.length < 100) {
